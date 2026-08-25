@@ -113,31 +113,32 @@ def update(object_distance: float):
 
 
 CSS = """
+html, body { width:100%; max-width:100%; overflow-x:hidden; }
 body, .gradio-container { background:#0d1016 !important; color:#f7f8fb !important; font-family:Arial,Helvetica,sans-serif !important; }
-.gradio-container { max-width:none !important; padding:0 !important; }
+.gradio-container { width:100% !important; max-width:none !important; padding:0 !important; overflow-x:hidden !important; }
 footer { display:none !important; }
-.shell { min-height:900px; align-items:stretch !important; gap:0 !important; }
+.shell { width:100% !important; max-width:100% !important; min-height:900px; align-items:stretch !important; gap:0 !important; }
 .sidebar { background:#262731; border-right:1px solid #353842; padding:52px 25px !important; min-width:260px !important; }
 .sidebar h2 { margin:0 0 34px; font-size:23px; }
 .sidebar .block { margin-bottom:28px !important; }
 .sidebar label, .sidebar .wrap { color:#f6f7fb !important; font-weight:700 !important; }
 .sidebar input[type=range] { accent-color:#ff575f; }
 .sidebar .gr-button { background:#343844 !important; border-color:#4a5060 !important; color:#dfe7f3 !important; }
-.content { padding:70px clamp(28px,6vw,100px) 50px !important; overflow:hidden; }
+.content { min-width:0 !important; padding:70px clamp(28px,6vw,100px) 50px !important; overflow:hidden; }
 .title h1 { font-size:clamp(32px,3.3vw,53px); letter-spacing:-2px; margin:0 0 17px; font-weight:800; }
 .subtitle { color:#a9afbb; font-size:17px; margin:0 0 32px; }
 .metric-row { gap:20px !important; margin-bottom:30px; }
 .metric { min-height:94px; }.metric-label { font-size:16px; font-weight:700; margin-bottom:13px; }.metric-value { font-size:40px; letter-spacing:-1.5px; }
 .notice { padding:24px 20px; border-radius:10px; background:#17314b; color:#3598ff; font-size:17px; line-height:1.4; font-weight:700; margin-bottom:17px; }
 .notice.good { background:#153b34; color:#63e6be; }
-.diagram { width:100%; min-width:0; height:635px; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; }.diagram svg { width:100%; min-width:680px; height:100%; overflow:visible; }
+.diagram { width:100%; min-width:0; aspect-ratio:1320 / 630; max-height:635px; overflow:hidden; }.diagram svg { display:block; width:100%; min-width:0; height:100%; overflow:visible; }
 .grid { stroke:#303540; stroke-width:1; }.axis-text { fill:#aeb7c5; font-size:14px; }.label { fill:#fbfcff; font-size:15px; font-weight:700; }.small-label { fill:#ffc5cb; font-size:14px; }
 .eye { fill:none; stroke:#79bfff; stroke-width:2.4; }.retina { stroke:#0877d8; stroke-width:7; }.lens { stroke:#ffa9ae; stroke-width:5; }.object { stroke:#ff424d; stroke-width:7; }
 .pre { fill:none; stroke-width:2.6; stroke-dasharray:4 5; }.post { fill:none; stroke-width:3.8; }.after { fill:none; stroke-width:2.2; stroke-dasharray:8 8; opacity:.9; }.focus-mark { stroke:#f1f4fa; stroke-width:5; }
 .caption { color:#939baa; font-size:14px; margin:-7px 0 30px; }.students { font-size:29px; margin:0 0 20px; }
 .vision-panel { display:flex; justify-content:space-between; align-items:center; gap:18px; background:#151922; border:1px solid #2a2f3b; border-radius:12px; margin:4px 0 28px; padding:18px 22px; }.vision-label { color:#c9d0dc; font-size:15px; font-weight:700; }.vision-state { font-size:28px; font-weight:800; letter-spacing:.04em; color:#ff8b92; margin:4px 0; }.vision-panel.clear .vision-state { color:#63e6be; }.vision-panel p { margin:0; max-width:660px; color:#b5bdca; line-height:1.45; }.vision-target { width:96px; height:96px; display:grid; place-items:center; border-radius:9px; background:#f2f5f9; color:#0f1520; font-size:76px; font-family:Arial,sans-serif; font-weight:800; transition:filter .16s ease; }
 .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }.card { background:#151922; border:1px solid #2a2f3b; border-radius:12px; padding:19px; min-height:136px; }.card h3 { font-size:17px; margin:0 0 9px; }.card p { color:#c2c8d2; margin:0; line-height:1.52; }
-@media(max-width:850px) { .shell { flex-direction:column !important; }.sidebar { min-width:0 !important; width:100% !important; flex-basis:100% !important; padding:28px 22px !important; }.content { width:100% !important; padding:35px 18px !important; }.metric-row { flex-direction:column !important; }.cards { grid-template-columns:1fr; }.vision-panel { align-items:flex-start; }.vision-target { width:76px; height:76px; font-size:58px; flex:0 0 auto; }.diagram { height:450px; border-radius:10px; background:#0d1016; } .diagram svg { width:680px; min-width:680px; } }
+@media(max-width:850px) { .shell { display:flex !important; flex-direction:column !important; flex-wrap:nowrap !important; }.sidebar { min-width:0 !important; width:100% !important; max-width:100% !important; flex:0 0 auto !important; padding:28px 22px !important; }.content { width:100% !important; max-width:100% !important; min-width:0 !important; padding:35px 18px !important; }.metric-row { flex-direction:column !important; }.cards { grid-template-columns:1fr; }.vision-panel { align-items:flex-start; }.vision-target { width:76px; height:76px; font-size:58px; flex:0 0 auto; }.diagram { width:100%; height:auto; max-height:none; aspect-ratio:1320 / 630; border-radius:10px; background:#0d1016; }.diagram .label { font-size:28px; }.diagram .small-label { font-size:26px; }.diagram .axis-text { font-size:22px; } }
 """
 
 

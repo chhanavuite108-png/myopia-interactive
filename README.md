@@ -50,4 +50,4 @@ The first visit after about 15 minutes of inactivity can take around a minute wh
 
 The visual model uses the thin-lens relation `1/v = P - 1/u`, where `P` is optical power in dioptres and `u` is object distance in metres.
 
-On phones, the controls stack above the visualization. The detailed ray diagram can be swiped horizontally if needed.
+On phones, controls stack above the visualization and the ray diagram scales to fit the screen width.
