@@ -7,6 +7,14 @@ import os
 import gradio as gr
 
 
+# These fixed values represent one myopic eye.  At about 25 cm, its image
+# point reaches the retina; farther objects focus in front of the retina.
+MYOPIC_EYE_POWER_D = 51.6
+RETINA_DISTANCE_MM = 21.0
+NEAR_LIMIT_M = 0.10
+FAR_LIMIT_M = 20.0
+
+
 def focus_distance_mm(object_distance_m: float, eye_power_d: float) -> float:
     """Thin-lens image distance: 1/v = P - 1/u, returned in millimetres."""
     return 1000.0 / (eye_power_d - 1.0 / object_distance_m)
@@ -23,9 +31,9 @@ def ray_diagram(object_distance_m: float, eye_power_d: float, axial_length_mm: f
     focus_x = lens_x + focal_mm * scale
     centre_x = (lens_x + retina_x) / 2
     eye_radius_x = (retina_x - lens_x) / 2 + 50
-    # The physical distances (3–100 m) are compressed for the screen.  Near
+    # The physical distances are compressed for the screen.  Near
     # objects sit visibly closer to the eye; distant objects move left.
-    object_x = 460 - ((object_distance_m - 3.0) / 97.0) * 330
+    object_x = 460 - ((object_distance_m - NEAR_LIMIT_M) / (FAR_LIMIT_M - NEAR_LIMIT_M)) * 330
     colours = ["#ff9200", "#40c6b7", "#0879dd", "#dce3f2", "#7950f2"]
     heights = [-112, -50, 0, 50, 112]
 
@@ -63,9 +71,31 @@ def ray_diagram(object_distance_m: float, eye_power_d: float, axial_length_mm: f
     """
 
 
-def update(object_distance: float, eye_power: float, axial_length: float):
-    focal_mm = focus_distance_mm(object_distance, eye_power)
-    offset = focal_mm - axial_length
+def perceived_vision(offset_mm: float) -> str:
+    """A qualitative retinal-image preview based on defocus from the retina."""
+    blur_px = min(9.0, max(0.0, abs(offset_mm) * 3.8))
+    if abs(offset_mm) <= 0.30:
+        state = "CLEAR"
+        explanation = "The rays meet on the retina, so this nearby object can be seen clearly."
+        extra_class = "clear"
+    elif offset_mm < 0:
+        state = "BLURRY"
+        explanation = "The rays meet before the retina and have spread out again by the time they reach it."
+        extra_class = "blurry"
+    else:
+        state = "BLURRY"
+        explanation = "The rays would meet behind the retina, so the retinal image is not sharp."
+        extra_class = "blurry"
+    return f'''
+    <section class="vision-panel {extra_class}">
+      <div><div class="vision-label">Perceived vision</div><div class="vision-state">{state}</div><p>{explanation}</p></div>
+      <div class="vision-target" style="filter:blur({blur_px:.1f}px)">E</div>
+    </section>'''
+
+
+def update(object_distance: float):
+    focal_mm = focus_distance_mm(object_distance, MYOPIC_EYE_POWER_D)
+    offset = focal_mm - RETINA_DISTANCE_MM
     if offset < -0.15:
         banner = '<div class="notice">Focus forms IN FRONT of the retina. The retina is beyond the natural focal point, so the image on the retina is blurred.</div>'
     elif abs(offset) <= 0.15:
@@ -75,9 +105,10 @@ def update(object_distance: float, eye_power: float, axial_length: float):
     return (
         metric("Object distance", f"{object_distance:.1f} m"),
         metric("Focal point", f"{focal_mm:.1f} mm"),
-        metric("Retina position", f"{axial_length:.1f} mm"),
+        metric("Fixed retina position", f"{RETINA_DISTANCE_MM:.1f} mm"),
         banner,
-        ray_diagram(object_distance, eye_power, axial_length),
+        ray_diagram(object_distance, MYOPIC_EYE_POWER_D, RETINA_DISTANCE_MM),
+        perceived_vision(offset),
     )
 
 
@@ -104,22 +135,21 @@ footer { display:none !important; }
 .eye { fill:none; stroke:#79bfff; stroke-width:2.4; }.retina { stroke:#0877d8; stroke-width:7; }.lens { stroke:#ffa9ae; stroke-width:5; }.object { stroke:#ff424d; stroke-width:7; }
 .pre { fill:none; stroke-width:2.6; stroke-dasharray:4 5; }.post { fill:none; stroke-width:3.8; }.after { fill:none; stroke-width:2.2; stroke-dasharray:8 8; opacity:.9; }.focus-mark { stroke:#f1f4fa; stroke-width:5; }
 .caption { color:#939baa; font-size:14px; margin:-7px 0 30px; }.students { font-size:29px; margin:0 0 20px; }
+.vision-panel { display:flex; justify-content:space-between; align-items:center; gap:18px; background:#151922; border:1px solid #2a2f3b; border-radius:12px; margin:4px 0 28px; padding:18px 22px; }.vision-label { color:#c9d0dc; font-size:15px; font-weight:700; }.vision-state { font-size:28px; font-weight:800; letter-spacing:.04em; color:#ff8b92; margin:4px 0; }.vision-panel.clear .vision-state { color:#63e6be; }.vision-panel p { margin:0; max-width:660px; color:#b5bdca; line-height:1.45; }.vision-target { width:96px; height:96px; display:grid; place-items:center; border-radius:9px; background:#f2f5f9; color:#0f1520; font-size:76px; font-family:Arial,sans-serif; font-weight:800; transition:filter .16s ease; }
 .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }.card { background:#151922; border:1px solid #2a2f3b; border-radius:12px; padding:19px; min-height:136px; }.card h3 { font-size:17px; margin:0 0 9px; }.card p { color:#c2c8d2; margin:0; line-height:1.52; }
-@media(max-width:850px) { .shell { flex-direction:column !important; }.sidebar { min-width:0 !important; width:100% !important; flex-basis:100% !important; padding:28px 22px !important; }.sidebar .form { display:grid !important; grid-template-columns:1fr !important; }.content { width:100% !important; padding:35px 18px !important; }.metric-row { flex-direction:column !important; }.cards { grid-template-columns:1fr; }.diagram { height:450px; border-radius:10px; background:#0d1016; } .diagram svg { width:680px; min-width:680px; } }
+@media(max-width:850px) { .shell { flex-direction:column !important; }.sidebar { min-width:0 !important; width:100% !important; flex-basis:100% !important; padding:28px 22px !important; }.content { width:100% !important; padding:35px 18px !important; }.metric-row { flex-direction:column !important; }.cards { grid-template-columns:1fr; }.vision-panel { align-items:flex-start; }.vision-target { width:76px; height:76px; font-size:58px; flex:0 0 auto; }.diagram { height:450px; border-radius:10px; background:#0d1016; } .diagram svg { width:680px; min-width:680px; } }
 """
 
 
-initial = update(31.5, 55.5, 21.0)
+initial = update(0.25)
 
 with gr.Blocks(css=CSS, title="Myopia Interactive", theme=gr.themes.Base()) as demo:
     with gr.Row(elem_classes="shell"):
         with gr.Column(scale=1, min_width=260, elem_classes="sidebar"):
             gr.HTML("<h2>Controls</h2>")
-            object_distance = gr.Slider(3, 100, value=31.5, step=0.5, label="Object distance (m)")
-            eye_power = gr.Slider(40, 65, value=55.5, step=0.5, label="Eye optical power (D)")
-            axial_length = gr.Slider(16, 24, value=21.0, step=0.5, label="Retina distance / axial length (mm)")
-            gr.HTML('<p class="side-note">Move a slider and watch the light rays, focus and retina update.</p>')
-            reset = gr.Button("Reset demonstration")
+            object_distance = gr.Slider(NEAR_LIMIT_M, FAR_LIMIT_M, value=0.25, step=0.05, label="Object distance (m)")
+            gr.HTML('<p class="side-note">This eye is fixed as myopic. Move only the object: nearby objects become clearer; distant ones blur.</p><p class="side-note"><b>Fixed eye power:</b> 51.6 D<br><b>Fixed retina distance:</b> 21.0 mm</p>')
+            reset = gr.Button("Reset object to clear distance")
 
         with gr.Column(scale=5, elem_classes="content"):
             gr.HTML('<div class="title"><h1>👁️ Myopia: Why distant objects look blurred</h1><p class="subtitle">Interactive Class 10 Physics visualization — ray focusing in a myopic eye</p></div>')
@@ -129,18 +159,17 @@ with gr.Blocks(css=CSS, title="Myopia Interactive", theme=gr.themes.Base()) as d
                 retina_metric = gr.HTML(initial[2])
             banner = gr.HTML(initial[3])
             diagram = gr.HTML(initial[4])
-            gr.HTML('<p class="caption">The model uses the thin-lens relation: object distance and eye optical power both change the point where rays meet.</p>')
+            vision = gr.HTML(initial[5])
+            gr.HTML('<p class="caption">The myopic eye stays fixed. Only object distance changes the incoming rays and the refracted image position.</p>')
             gr.HTML('<h2 class="students">What should students notice?</h2><section class="cards"><div class="card"><h3>1. A distant object</h3><p>Light from a far-away object reaches the eye almost parallel. The eye lens bends these rays inward.</p></div><div class="card"><h3>2. In a myopic eye</h3><p>If the eye is too powerful or the eyeball is too long, the rays meet before reaching the retina.</p></div><div class="card"><h3>3. Why the image blurs</h3><p>After crossing at the focus, rays spread out again. The retina receives a spread-out image.</p></div></section>')
 
-    inputs = [object_distance, eye_power, axial_length]
-    outputs = [distance_metric, focus_metric, retina_metric, banner, diagram]
-    for slider in inputs:
-        slider.input(update, inputs=inputs, outputs=outputs, queue=False, show_progress="hidden")
+    outputs = [distance_metric, focus_metric, retina_metric, banner, diagram, vision]
+    object_distance.input(update, inputs=object_distance, outputs=outputs, queue=False, show_progress="hidden")
     reset.click(
-        lambda: (31.5, 55.5, 21.0),
-        outputs=inputs,
+        lambda: 0.25,
+        outputs=object_distance,
         queue=False,
-    ).then(update, inputs=inputs, outputs=outputs, queue=False, show_progress="hidden")
+    ).then(update, inputs=object_distance, outputs=outputs, queue=False, show_progress="hidden")
 
 
 if __name__ == "__main__":

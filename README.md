@@ -10,7 +10,7 @@ pinned: false
 
 # Myopia Interactive
 
-A Gradio classroom visualization for explaining how a myopic eye focuses light in front of the retina. The sliders update the ray diagram as they move.
+A Gradio classroom visualization for explaining myopia with one moveable control: object distance. The eye power and retina position remain fixed as a myopic eye model.
 
 ## Run it on Windows
 
@@ -44,10 +44,9 @@ The first visit after about 15 minutes of inactivity can take around a minute wh
 
 ## What changes with each control
 
-- **Object distance** changes the incoming-ray geometry and image distance in real time.
-- The **object itself moves** closer to and farther from the eye as this slider is dragged.
-- **Eye optical power** changes focal length: higher power brings the focus closer to the lens.
-- **Retina distance / axial length** moves the retinal surface relative to the focus.
+- **Object distance** is the only control. It moves the object, changes the incoming-ray geometry, and updates the refracted rays in real time.
+- **Perceived vision** shows a sharp target when the focus reaches the retina and a blurred target when it misses.
+- The eye power and retina position are intentionally fixed to show the characteristic behaviour of one myopic eye.
 
 The visual model uses the thin-lens relation `1/v = P - 1/u`, where `P` is optical power in dioptres and `u` is object distance in metres.
 
