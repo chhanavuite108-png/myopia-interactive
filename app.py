@@ -1,0 +1,147 @@
+"""Interactive myopia lesson, deployed as a native Gradio application."""
+
+from __future__ import annotations
+
+import os
+
+import gradio as gr
+
+
+def focus_distance_mm(object_distance_m: float, eye_power_d: float) -> float:
+    """Thin-lens image distance: 1/v = P - 1/u, returned in millimetres."""
+    return 1000.0 / (eye_power_d - 1.0 / object_distance_m)
+
+
+def metric(label: str, value: str) -> str:
+    return f'<div class="metric"><div class="metric-label">{label}</div><div class="metric-value">{value}</div></div>'
+
+
+def ray_diagram(object_distance_m: float, eye_power_d: float, axial_length_mm: float) -> str:
+    focal_mm = focus_distance_mm(object_distance_m, eye_power_d)
+    lens_x, zero_y, scale = 640, 360, 20
+    retina_x = lens_x + axial_length_mm * scale
+    focus_x = lens_x + focal_mm * scale
+    centre_x = (lens_x + retina_x) / 2
+    eye_radius_x = (retina_x - lens_x) / 2 + 50
+    colours = ["#ff9200", "#40c6b7", "#0879dd", "#dce3f2", "#7950f2"]
+    heights = [-112, -50, 0, 50, 112]
+
+    ray_lines = []
+    for height, colour in zip(heights, colours):
+        lens_y = zero_y + height
+        end_x = max(retina_x + 38, focus_x + 34)
+        end_y = zero_y - (height / focal_mm / scale) * (end_x - focus_x)
+        ray_lines.extend(
+            [
+                f'<line class="pre" stroke="{colour}" x1="250" y1="250" x2="{lens_x}" y2="{lens_y}"/>',
+                f'<line class="post" stroke="{colour}" x1="{lens_x}" y1="{lens_y}" x2="{focus_x}" y2="{zero_y}"/>',
+                f'<line class="after" stroke="{colour}" x1="{focus_x}" y1="{zero_y}" x2="{end_x}" y2="{end_y}"/>',
+            ]
+        )
+
+    return f"""
+    <div class="diagram">
+      <svg viewBox="0 0 1320 630" role="img" aria-label="Ray diagram of a myopic eye">
+        <line class="grid" x1="80" x2="1280" y1="120" y2="120"/><line class="grid" x1="80" x2="1280" y1="240" y2="240"/>
+        <line class="grid" x1="80" x2="1280" y1="360" y2="360"/><line class="grid" x1="80" x2="1280" y1="480" y2="480"/><line class="grid" x1="80" x2="1280" y1="570" y2="570"/>
+        <text class="axis-text" x="82" y="610">Distance through the eye (mm)</text>
+        <text class="axis-text" x="15" y="365">0</text><text class="axis-text" x="15" y="245">5</text><text class="axis-text" x="10" y="125">10</text>
+        <ellipse class="eye" cx="{centre_x}" cy="360" rx="{eye_radius_x}" ry="235"/>
+        <line class="retina" x1="{retina_x}" x2="{retina_x}" y1="210" y2="510"/>
+        <line class="lens" x1="640" x2="640" y1="240" y2="480"/>
+        <line class="object" x1="250" x2="250" y1="360" y2="250"/>
+        <text class="label" x="228" y="230">Object</text><text class="label" x="606" y="211">Eye lens</text>
+        <text class="label" x="{retina_x - 25}" y="182">Retina</text><text class="small-label" x="{focus_x - 28}" y="544">Focus</text>
+        {''.join(ray_lines)}
+        <line class="focus-mark" x1="{focus_x - 8}" y1="{zero_y - 8}" x2="{focus_x + 8}" y2="{zero_y + 8}"/>
+        <line class="focus-mark" x1="{focus_x - 8}" y1="{zero_y + 8}" x2="{focus_x + 8}" y2="{zero_y - 8}"/>
+      </svg>
+    </div>
+    """
+
+
+def update(object_distance: float, eye_power: float, axial_length: float):
+    focal_mm = focus_distance_mm(object_distance, eye_power)
+    offset = focal_mm - axial_length
+    if offset < -0.15:
+        banner = '<div class="notice">Focus forms IN FRONT of the retina. The retina is beyond the natural focal point, so the image on the retina is blurred.</div>'
+    elif abs(offset) <= 0.15:
+        banner = '<div class="notice good">Focus reaches the retina. The rays meet on the retinal surface, producing the clearest image in this model.</div>'
+    else:
+        banner = '<div class="notice">Focus falls BEHIND the retina. The eye is under-powered for this retinal position, so the image is not sharply focused.</div>'
+    return (
+        metric("Object distance", f"{object_distance:.1f} m"),
+        metric("Focal point", f"{focal_mm:.1f} mm"),
+        metric("Retina position", f"{axial_length:.1f} mm"),
+        banner,
+        ray_diagram(object_distance, eye_power, axial_length),
+    )
+
+
+CSS = """
+body, .gradio-container { background:#0d1016 !important; color:#f7f8fb !important; font-family:Arial,Helvetica,sans-serif !important; }
+.gradio-container { max-width:none !important; padding:0 !important; }
+footer { display:none !important; }
+.shell { min-height:900px; align-items:stretch !important; gap:0 !important; }
+.sidebar { background:#262731; border-right:1px solid #353842; padding:52px 25px !important; min-width:260px !important; }
+.sidebar h2 { margin:0 0 34px; font-size:23px; }
+.sidebar .block { margin-bottom:28px !important; }
+.sidebar label, .sidebar .wrap { color:#f6f7fb !important; font-weight:700 !important; }
+.sidebar input[type=range] { accent-color:#ff575f; }
+.sidebar .gr-button { background:#343844 !important; border-color:#4a5060 !important; color:#dfe7f3 !important; }
+.content { padding:70px clamp(28px,6vw,100px) 50px !important; overflow:hidden; }
+.title h1 { font-size:clamp(32px,3.3vw,53px); letter-spacing:-2px; margin:0 0 17px; font-weight:800; }
+.subtitle { color:#a9afbb; font-size:17px; margin:0 0 32px; }
+.metric-row { gap:20px !important; margin-bottom:30px; }
+.metric { min-height:94px; }.metric-label { font-size:16px; font-weight:700; margin-bottom:13px; }.metric-value { font-size:40px; letter-spacing:-1.5px; }
+.notice { padding:24px 20px; border-radius:10px; background:#17314b; color:#3598ff; font-size:17px; line-height:1.4; font-weight:700; margin-bottom:17px; }
+.notice.good { background:#153b34; color:#63e6be; }
+.diagram { width:100%; min-width:680px; height:635px; }.diagram svg { width:100%; height:100%; overflow:visible; }
+.grid { stroke:#303540; stroke-width:1; }.axis-text { fill:#aeb7c5; font-size:14px; }.label { fill:#fbfcff; font-size:15px; font-weight:700; }.small-label { fill:#ffc5cb; font-size:14px; }
+.eye { fill:none; stroke:#79bfff; stroke-width:2.4; }.retina { stroke:#0877d8; stroke-width:7; }.lens { stroke:#ffa9ae; stroke-width:5; }.object { stroke:#ff424d; stroke-width:7; }
+.pre { fill:none; stroke-width:2.6; stroke-dasharray:4 5; }.post { fill:none; stroke-width:3.8; }.after { fill:none; stroke-width:2.2; stroke-dasharray:8 8; opacity:.9; }.focus-mark { stroke:#f1f4fa; stroke-width:5; }
+.caption { color:#939baa; font-size:14px; margin:-7px 0 30px; }.students { font-size:29px; margin:0 0 20px; }
+.cards { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }.card { background:#151922; border:1px solid #2a2f3b; border-radius:12px; padding:19px; min-height:136px; }.card h3 { font-size:17px; margin:0 0 9px; }.card p { color:#c2c8d2; margin:0; line-height:1.52; }
+@media(max-width:850px) { .shell { flex-direction:column !important; }.sidebar { min-width:0 !important; }.content { padding:35px 22px !important; }.metric-row { flex-direction:column !important; }.cards { grid-template-columns:1fr; }.diagram { min-width:620px; } }
+"""
+
+
+initial = update(31.5, 55.5, 21.0)
+
+with gr.Blocks(css=CSS, title="Myopia Interactive", theme=gr.themes.Base()) as demo:
+    with gr.Row(elem_classes="shell"):
+        with gr.Column(scale=1, min_width=260, elem_classes="sidebar"):
+            gr.HTML("<h2>Controls</h2>")
+            object_distance = gr.Slider(3, 100, value=31.5, step=0.5, label="Object distance (m)")
+            eye_power = gr.Slider(40, 65, value=55.5, step=0.5, label="Eye optical power (D)")
+            axial_length = gr.Slider(16, 24, value=21.0, step=0.5, label="Retina distance / axial length (mm)")
+            gr.HTML('<p class="side-note">Move a slider and watch the light rays, focus and retina update.</p>')
+            reset = gr.Button("Reset demonstration")
+
+        with gr.Column(scale=5, elem_classes="content"):
+            gr.HTML('<div class="title"><h1>👁️ Myopia: Why distant objects look blurred</h1><p class="subtitle">Interactive Class 10 Physics visualization — ray focusing in a myopic eye</p></div>')
+            with gr.Row(elem_classes="metric-row"):
+                distance_metric = gr.HTML(initial[0])
+                focus_metric = gr.HTML(initial[1])
+                retina_metric = gr.HTML(initial[2])
+            banner = gr.HTML(initial[3])
+            diagram = gr.HTML(initial[4])
+            gr.HTML('<p class="caption">The model uses the thin-lens relation: object distance and eye optical power both change the point where rays meet.</p>')
+            gr.HTML('<h2 class="students">What should students notice?</h2><section class="cards"><div class="card"><h3>1. A distant object</h3><p>Light from a far-away object reaches the eye almost parallel. The eye lens bends these rays inward.</p></div><div class="card"><h3>2. In a myopic eye</h3><p>If the eye is too powerful or the eyeball is too long, the rays meet before reaching the retina.</p></div><div class="card"><h3>3. Why the image blurs</h3><p>After crossing at the focus, rays spread out again. The retina receives a spread-out image.</p></div></section>')
+
+    inputs = [object_distance, eye_power, axial_length]
+    outputs = [distance_metric, focus_metric, retina_metric, banner, diagram]
+    for slider in inputs:
+        slider.input(update, inputs=inputs, outputs=outputs, queue=False, show_progress="hidden")
+    reset.click(
+        lambda: (31.5, 55.5, 21.0),
+        outputs=inputs,
+        queue=False,
+    ).then(update, inputs=inputs, outputs=outputs, queue=False, show_progress="hidden")
+
+
+if __name__ == "__main__":
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=int(os.environ.get("PORT", "7860")),
+    )
