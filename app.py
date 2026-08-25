@@ -23,6 +23,9 @@ def ray_diagram(object_distance_m: float, eye_power_d: float, axial_length_mm: f
     focus_x = lens_x + focal_mm * scale
     centre_x = (lens_x + retina_x) / 2
     eye_radius_x = (retina_x - lens_x) / 2 + 50
+    # The physical distances (3–100 m) are compressed for the screen.  Near
+    # objects sit visibly closer to the eye; distant objects move left.
+    object_x = 460 - ((object_distance_m - 3.0) / 97.0) * 330
     colours = ["#ff9200", "#40c6b7", "#0879dd", "#dce3f2", "#7950f2"]
     heights = [-112, -50, 0, 50, 112]
 
@@ -33,7 +36,7 @@ def ray_diagram(object_distance_m: float, eye_power_d: float, axial_length_mm: f
         end_y = zero_y - (height / focal_mm / scale) * (end_x - focus_x)
         ray_lines.extend(
             [
-                f'<line class="pre" stroke="{colour}" x1="250" y1="250" x2="{lens_x}" y2="{lens_y}"/>',
+                f'<line class="pre" stroke="{colour}" x1="{object_x}" y1="250" x2="{lens_x}" y2="{lens_y}"/>',
                 f'<line class="post" stroke="{colour}" x1="{lens_x}" y1="{lens_y}" x2="{focus_x}" y2="{zero_y}"/>',
                 f'<line class="after" stroke="{colour}" x1="{focus_x}" y1="{zero_y}" x2="{end_x}" y2="{end_y}"/>',
             ]
@@ -49,8 +52,8 @@ def ray_diagram(object_distance_m: float, eye_power_d: float, axial_length_mm: f
         <ellipse class="eye" cx="{centre_x}" cy="360" rx="{eye_radius_x}" ry="235"/>
         <line class="retina" x1="{retina_x}" x2="{retina_x}" y1="210" y2="510"/>
         <line class="lens" x1="640" x2="640" y1="240" y2="480"/>
-        <line class="object" x1="250" x2="250" y1="360" y2="250"/>
-        <text class="label" x="228" y="230">Object</text><text class="label" x="606" y="211">Eye lens</text>
+        <line class="object" x1="{object_x}" x2="{object_x}" y1="360" y2="250"/>
+        <text class="label" x="{object_x - 25}" y="230">Object</text><text class="label" x="606" y="211">Eye lens</text>
         <text class="label" x="{retina_x - 25}" y="182">Retina</text><text class="small-label" x="{focus_x - 28}" y="544">Focus</text>
         {''.join(ray_lines)}
         <line class="focus-mark" x1="{focus_x - 8}" y1="{zero_y - 8}" x2="{focus_x + 8}" y2="{zero_y + 8}"/>
@@ -96,13 +99,13 @@ footer { display:none !important; }
 .metric { min-height:94px; }.metric-label { font-size:16px; font-weight:700; margin-bottom:13px; }.metric-value { font-size:40px; letter-spacing:-1.5px; }
 .notice { padding:24px 20px; border-radius:10px; background:#17314b; color:#3598ff; font-size:17px; line-height:1.4; font-weight:700; margin-bottom:17px; }
 .notice.good { background:#153b34; color:#63e6be; }
-.diagram { width:100%; min-width:680px; height:635px; }.diagram svg { width:100%; height:100%; overflow:visible; }
+.diagram { width:100%; min-width:0; height:635px; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; }.diagram svg { width:100%; min-width:680px; height:100%; overflow:visible; }
 .grid { stroke:#303540; stroke-width:1; }.axis-text { fill:#aeb7c5; font-size:14px; }.label { fill:#fbfcff; font-size:15px; font-weight:700; }.small-label { fill:#ffc5cb; font-size:14px; }
 .eye { fill:none; stroke:#79bfff; stroke-width:2.4; }.retina { stroke:#0877d8; stroke-width:7; }.lens { stroke:#ffa9ae; stroke-width:5; }.object { stroke:#ff424d; stroke-width:7; }
 .pre { fill:none; stroke-width:2.6; stroke-dasharray:4 5; }.post { fill:none; stroke-width:3.8; }.after { fill:none; stroke-width:2.2; stroke-dasharray:8 8; opacity:.9; }.focus-mark { stroke:#f1f4fa; stroke-width:5; }
 .caption { color:#939baa; font-size:14px; margin:-7px 0 30px; }.students { font-size:29px; margin:0 0 20px; }
 .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }.card { background:#151922; border:1px solid #2a2f3b; border-radius:12px; padding:19px; min-height:136px; }.card h3 { font-size:17px; margin:0 0 9px; }.card p { color:#c2c8d2; margin:0; line-height:1.52; }
-@media(max-width:850px) { .shell { flex-direction:column !important; }.sidebar { min-width:0 !important; }.content { padding:35px 22px !important; }.metric-row { flex-direction:column !important; }.cards { grid-template-columns:1fr; }.diagram { min-width:620px; } }
+@media(max-width:850px) { .shell { flex-direction:column !important; }.sidebar { min-width:0 !important; width:100% !important; flex-basis:100% !important; padding:28px 22px !important; }.sidebar .form { display:grid !important; grid-template-columns:1fr !important; }.content { width:100% !important; padding:35px 18px !important; }.metric-row { flex-direction:column !important; }.cards { grid-template-columns:1fr; }.diagram { height:450px; border-radius:10px; background:#0d1016; } .diagram svg { width:680px; min-width:680px; } }
 """
 
 

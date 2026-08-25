@@ -45,7 +45,10 @@ The first visit after about 15 minutes of inactivity can take around a minute wh
 ## What changes with each control
 
 - **Object distance** changes the incoming-ray geometry and image distance in real time.
+- The **object itself moves** closer to and farther from the eye as this slider is dragged.
 - **Eye optical power** changes focal length: higher power brings the focus closer to the lens.
 - **Retina distance / axial length** moves the retinal surface relative to the focus.
 
 The visual model uses the thin-lens relation `1/v = P - 1/u`, where `P` is optical power in dioptres and `u` is object distance in metres.
+
+On phones, the controls stack above the visualization. The detailed ray diagram can be swiped horizontally if needed.
